@@ -193,6 +193,9 @@ ifeq ($(TARGET_PLATFORM),$(filter $(TARGET_PLATFORM),PLATFORM_WEB PLATFORM_WEB_R
     endif
 endif
 
+# force
+PLATFORM_OS = MORPHOS
+
 ifeq ($(TARGET_PLATFORM),$(filter $(TARGET_PLATFORM),PLATFORM_WEB PLATFORM_WEB_RGFW))
     ifeq ($(PLATFORM_OS), WINDOWS)
         # Emscripten required variables
