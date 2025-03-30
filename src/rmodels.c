@@ -5242,6 +5242,7 @@ static Model LoadGLTF(const char *fileName)
     // Macro to simplify attributes loading code
     #define LOAD_ATTRIBUTE(accesor, numComp, srcType, dstPtr) LOAD_ATTRIBUTE_CAST(accesor, numComp, srcType, dstPtr, srcType)
 
+#ifndef __MORPHOS__
     #define LOAD_ATTRIBUTE_CAST(accesor, numComp, srcType, dstPtr, dstType) \
     { \
         int n = 0; \
@@ -5255,7 +5256,37 @@ static Model LoadGLTF(const char *fileName)
             n += (int)(accesor->stride/sizeof(srcType));\
         }\
     }
-
+#else
+ #define LOAD_ATTRIBUTE_CAST(accesor, numComp, srcType, dstPtr, dstType) \
+    { \
+        int n = 0; \
+        srcType *buffer = (srcType *)accesor->buffer_view->buffer->data + accesor->buffer_view->offset/sizeof(srcType) + accesor->offset/sizeof(srcType); \
+        char *dst_type_str = #dstType; \
+        bool is_dst_float = false;\
+        bool is_dst_ushort = false;\
+        if (strcmp(dst_type_str, "float") == 0 ) {is_dst_float = true;} \
+        if (strcmp(dst_type_str, "unsigned short") == 0 ) {is_dst_ushort = true;} \
+        for (unsigned int k = 0; k < accesor->count; k++) \
+        {\
+            for (int l = 0; l < numComp; l++) \
+            {\
+                dstPtr[numComp*k + l] = (dstType)buffer[n + l];\
+                if (is_dst_float)\
+                {\
+                    union { uint32_t u; float f ;} x ;\
+                    x.f = dstPtr[numComp*k + l];\
+                    x.u = __builtin_bswap32(x.u);\
+                    dstPtr[numComp*k + l] = x.f;\
+                }\
+                if (is_dst_ushort)\
+                {\
+                    dstPtr[numComp*k + l] = __builtin_bswap16(dstPtr[numComp*k + l]);\
+                }\
+            }\
+            n += (int)(accesor->stride/sizeof(srcType));\
+        }\
+    }
+#endif
     Model model = { 0 };
 
     // glTF file loading

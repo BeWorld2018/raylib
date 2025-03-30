@@ -2083,6 +2083,7 @@ const char *GetDirectoryPath(const char *filePath)
     static char dirPath[MAX_FILEPATH_LENGTH] = { 0 };
     memset(dirPath, 0, MAX_FILEPATH_LENGTH);
 
+#ifndef __MORPHOS__
     // In case provided path does not contain a root drive letter (C:\, D:\) nor leading path separator (\, /),
     // we add the current directory path to dirPath
     if ((filePath[1] != ':') && (filePath[0] != '\\') && (filePath[0] != '/'))
@@ -2092,6 +2093,7 @@ const char *GetDirectoryPath(const char *filePath)
         dirPath[0] = '.';
         dirPath[1] = '/';
     }
+#endif
 
     lastSlash = strprbrk(filePath, "\\/");
     if (lastSlash)
@@ -2106,9 +2108,16 @@ const char *GetDirectoryPath(const char *filePath)
         {
             // NOTE: Be careful, strncpy() is not safe, it does not care about '\0'
             char *dirPathPtr = dirPath;
+#ifndef __MORPHOS__
             if ((filePath[1] != ':') && (filePath[0] != '\\') && (filePath[0] != '/')) dirPathPtr += 2;     // Skip drive letter, "C:"
+#endif
             memcpy(dirPathPtr, filePath, strlen(filePath) - (strlen(lastSlash) - 1));
+#ifndef __MORPHOS__
             dirPath[strlen(filePath) - strlen(lastSlash) + (((filePath[1] != ':') && (filePath[0] != '\\') && (filePath[0] != '/'))? 2 : 0)] = '\0';  // Add '\0' manually
+#else
+            dirPath[strlen(filePath) - strlen(lastSlash)] = '\0';  // Add '\0' manually
+#endif
+
         }
     }
 
