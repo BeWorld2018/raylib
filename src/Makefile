@@ -62,7 +62,7 @@
 # Define target platform
 PLATFORM             ?= PLATFORM_DESKTOP
 ifeq ($(PLATFORM), PLATFORM_DESKTOP)
-    TARGET_PLATFORM   = PLATFORM_DESKTOP_GLFW
+    TARGET_PLATFORM   = PLATFORM_DESKTOP_SDL
 else
     TARGET_PLATFORM   = $(PLATFORM)
 endif
@@ -117,17 +117,27 @@ GLFW_LINUX_ENABLE_X11      ?= TRUE
 
 # PLATFORM_DESKTOP_SDL: It requires SDL library to be provided externally
 # WARNING: Library is not included in raylib, it MUST be configured by users
-SDL_INCLUDE_PATH      ?= $(RAYLIB_SRC_PATH)/external/SDL2/include
-SDL_LIBRARY_PATH      ?= $(RAYLIB_SRC_PATH)/external/SDL2/lib
-SDL_LIBRARIES         ?= -lSDL2 -lSDL2main
+#SDL_INCLUDE_PATH      ?= $(RAYLIB_SRC_PATH)/external/SDL2/include
+#SDL_LIBRARY_PATH      ?= $(RAYLIB_SRC_PATH)/external/SDL2/lib
+#SDL_LIBRARIES         ?= -lSDL2 -lSDL2main
+
+# MORPHOS SDL3
+SDL_INCLUDE_PATH      = /gg/usr/local/include -I/gg/usr/local/include/SDL3
+SDL_LIBRARY_PATH      = /gg/usr/local/lib
+SDL_LIBRARIES         = -noixemul -lSDL3 -lpthread -lGL -lm
+
+# MORPHOS SDL2
+#SDL_INCLUDE_PATH      = /gg/usr/local/include -I/gg/usr/local/include/SDL2
+#SDL_LIBRARY_PATH      = /gg/usr/local/lib
+#SDL_LIBRARIES         = -noixemul -lSDL2 -lGL -lm
 
 # Determine if the file has root access (only required to install raylib)
 # "whoami" prints the name of the user that calls him (so, if it is the root user, "whoami" prints "root")
 ROOT = $(shell whoami)
 
 # By default we suppose we are working on Windows
-HOST_PLATFORM_OS ?= WINDOWS
-PLATFORM_OS ?= WINDOWS
+HOST_PLATFORM_OS ?= MORPHOS
+PLATFORM_OS ?= MORPHOS
 
 # Determine PLATFORM_OS when required
 ifeq ($(TARGET_PLATFORM),$(filter $(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW PLATFORM_DESKTOP_SDL PLATFORM_DESKTOP_RGFW PLATFORM_WEB PLATFORM_WEB_RGFW PLATFORM_ANDROID))
@@ -161,6 +171,9 @@ ifeq ($(TARGET_PLATFORM),$(filter $(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW PLATF
         ifndef PLATFORM_SHELL
             PLATFORM_SHELL = sh
         endif
+        ifeq ($(UNAMEOS),MorphOS)
+            PLATFORM_OS = MORPHOS
+        endif	
     endif
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DRM)
@@ -241,7 +254,7 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW)
     #GRAPHICS = GRAPHICS_API_OPENGL_ES2     # Uncomment to use OpenGL ES 2.0 (ANGLE)
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_SDL)
-    GRAPHICS ?= GRAPHICS_API_OPENGL_33
+    GRAPHICS ?= GRAPHICS_API_OPENGL_11  # GRAPHICS_API_OPENGL_11
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_RGFW)
     GRAPHICS ?= GRAPHICS_API_OPENGL_33
@@ -266,8 +279,8 @@ endif
 
 # Define default C compiler and archiver to pack library: CC, AR
 #------------------------------------------------------------------------------------------------
-CC = gcc
-AR = ar
+CC = ppc-morphos-gcc-11
+AR = ppc-morphos-ar
 
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW)
     ifeq ($(PLATFORM_OS),OSX)
@@ -340,6 +353,10 @@ endif
 
 ifeq ($(PLATFORM_OS), LINUX)
     CFLAGS += -fPIC
+endif
+
+ifeq ($(PLATFORM_OS), MORPHOS)
+    CFLAGS += -noixemul -O2
 endif
 
 ifeq ($(RAYLIB_BUILD_MODE),DEBUG)

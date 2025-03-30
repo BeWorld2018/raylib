@@ -54,7 +54,7 @@
 # Define required environment variables
 #------------------------------------------------------------------------------------------------
 # Define target platform: PLATFORM_DESKTOP, PLATFORM_DESKTOP_SDL, PLATFORM_DRM, PLATFORM_ANDROID, PLATFORM_WEB, PLATFORM_WEB_RGFW
-PLATFORM              ?= PLATFORM_DESKTOP
+PLATFORM              = PLATFORM_DESKTOP_SDL
 
 ifeq ($(PLATFORM),$(filter $(PLATFORM),PLATFORM_DESKTOP_GLFW PLATFORM_DESKTOP_SDL PLATFORM_DESKTOP_RGFW))
     TARGET_PLATFORM := $(PLATFORM)
@@ -73,7 +73,7 @@ RAYLIB_VERSION        ?= 5.5.0
 RAYLIB_PATH           ?= ..
 
 # Define raylib source code path
-RAYLIB_SRC_PATH       ?= ../src
+RAYLIB_SRC_PATH       ?= 
 
 # Locations of raylib.h and libraylib.a/libraylib.so
 # NOTE: Those variables are only used for PLATFORM_OS: LINUX, BSD
@@ -92,9 +92,16 @@ USE_EXTERNAL_GLFW     ?= FALSE
 
 # PLATFORM_DESKTOP_SDL: It requires SDL library to be provided externally
 # WARNING: Library is not included in raylib, it MUST be configured by users
-SDL_INCLUDE_PATH      ?= $(RAYLIB_SRC_PATH)/external/SDL2/include
-SDL_LIBRARY_PATH      ?= $(RAYLIB_SRC_PATH)/external/SDL2/lib
-SDL_LIBRARIES         ?= -lSDL2 -lSDL2main
+
+# MORPHOS SDL3
+SDL_INCLUDE_PATH      = $(RAYLIB_SRC_PATH)/gg/usr/local/include -I/gg/usr/local/include/SDL3
+SDL_LIBRARY_PATH      = $(RAYLIB_SRC_PATH)/gg/usr/local/lib
+SDL_LIBRARIES         = -lSDL3 -noixemul -lGL -lpthread -lm
+
+# MORPHOS SDL2
+#SDL_INCLUDE_PATH      = $(RAYLIB_SRC_PATH)/gg/usr/local/include -I/gg/usr/local/include/SDL2
+#SDL_LIBRARY_PATH      = $(RAYLIB_SRC_PATH)/gg/usr/local/lib
+#SDL_LIBRARIES         = -lSDL2 -noixemul -lGL -lpthread -lm
 
 # Use Wayland display server protocol on Linux desktop (by default it uses X11 windowing system)
 # NOTE: This variable is only used for PLATFORM_OS: LINUX
@@ -133,6 +140,9 @@ ifeq ($(TARGET_PLATFORM),$(filter $(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW PLATF
         ifeq ($(UNAMEOS),Darwin)
             PLATFORM_OS = OSX
         endif
+        ifeq ($(UNAMEOS),MorphOS)
+            PLATFORM_OS = MORPHOS
+        endif
     endif
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DRM)
@@ -141,6 +151,9 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_DRM)
         PLATFORM_OS = LINUX
     endif
 endif
+
+# Force
+PLATFORM_OS = MORPHOS
 
 # RAYLIB_PATH adjustment for LINUX platform
 # TODO: Do we really need this?
@@ -173,7 +186,7 @@ endif
 
 # Define default C compiler: CC
 #------------------------------------------------------------------------------------------------
-CC = gcc
+CC = ppc-morphos-gcc-11
 
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW)
     ifeq ($(PLATFORM_OS),OSX)
@@ -230,6 +243,10 @@ endif
 #  -D_DEFAULT_SOURCE    use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
 CFLAGS = -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result
 
+ifeq ($(PLATFORM_OS),MORPHOS)
+	CFLAGS += -noixemul 
+endif
+	
 ifeq ($(BUILD_MODE),DEBUG)
     CFLAGS += -g -D_DEBUG
 else  
@@ -450,6 +467,9 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_SDL)
         # NOTE: On ARM 32bit arch, miniaudio requires atomics library
         LDLIBS += -latomic
     endif
+    ifeq ($(PLATFORM_OS),MORPHOS)
+		LDLIBS = -lraylib $(SDL_LIBRARIES) -latomic
+	endif
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_RGFW)
     ifeq ($(PLATFORM_OS),WINDOWS)
@@ -657,9 +677,9 @@ AUDIO = \
 OTHERS = \
     others/easings_testbed \
     others/embedded_files_loading \
-    others/raylib_opengl_interop \
     others/raymath_vector_angle \
     others/rlgl_compute_shader
+#    others/raylib_opengl_interop \
 
 ifeq ($(TARGET_PLATFORM), PLATFORM_DESKTOP_GFLW)
     OTHERS += others/rlgl_standalone
@@ -694,6 +714,9 @@ endif
 
 # Clean everything
 clean:
+ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_SDL)
+	rm -f *.o $(CORE) $(SHAPES) $(TEXT) $(TEXTURES) $(MODELS) $(SHADERS) $(AUDIO) $(OTHERS)
+endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW)
     ifeq ($(PLATFORM_OS),WINDOWS)
 		del *.o *.exe /s

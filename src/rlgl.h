@@ -854,6 +854,11 @@ RLAPI void rlLoadDrawQuad(void);     // Load and draw a quad
     #endif
 #endif
 
+#ifdef __MORPHOS__
+	#define _NO_PPCINLINE
+	#include <tgl/gl.h>
+	#include <tgl/glu.h>
+#endif
 #if defined(GRAPHICS_API_OPENGL_33)
     #define GLAD_MALLOC RL_MALLOC
     #define GLAD_FREE RL_FREE

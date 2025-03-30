@@ -1915,6 +1915,10 @@ int InitPlatform(void)
     // NOTE: Some OpenGL context attributes must be set before window creation
 
     // Check selection OpenGL version
+#ifdef __MORHPOS__
+	 SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#else
     if (rlGetVersion() == RL_OPENGL_21)
     {
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
@@ -1953,6 +1957,7 @@ int InitPlatform(void)
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     }
+#endif
 
     // Init window
 #if defined(PLATFORM_DESKTOP_SDL3)

@@ -8299,7 +8299,7 @@ static void glad_gl_load_GL_OES_fixed_point( GLADuserptrloadfunc load, void* use
 
 
 
-#if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0)
+#if !defined(__MORPHOS__) && (defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0))
 #define GLAD_GL_IS_SOME_NEW_VERSION 1
 #else
 #define GLAD_GL_IS_SOME_NEW_VERSION 0
@@ -8537,6 +8537,10 @@ static int glad_gl_find_core_gl(void) {
     };
     int major = 0;
     int minor = 0;
+#ifdef __MORPHOS__
+    major = 1;
+    minor = 5;
+#else
     version = (const char*) glad_glGetString(GL_VERSION);
     if (!version) return 0;
     for (i = 0;  prefixes[i];  i++) {
@@ -8546,7 +8550,7 @@ static int glad_gl_find_core_gl(void) {
             break;
         }
     }
-
+#endif
     GLAD_IMPL_UTIL_SSCANF(version, "%d.%d", &major, &minor);
 
     GLAD_GL_VERSION_1_0 = (major == 1 && minor >= 0) || major > 1;
